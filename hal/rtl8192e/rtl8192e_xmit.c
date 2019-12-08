@@ -248,7 +248,7 @@ void UpdateEarlyModeInfo8192E(struct xmit_priv *pxmitpriv, struct xmit_buf *pxmi
 }
 #endif
 
-#if ((DEV_BUS_TYPE == RT_USB_INTERFACE) || (DEV_BUS_TYPE == RT_SDIO_INTERFACE))
+#if defined(CONFIG_USB_HCI) || defined(CONFIG_SDIO_HCI)
 void rtl8192e_cal_txdesc_chksum(u8 *ptxdesc)
 {
 	u16	*usPtr = (u16 *)ptxdesc;

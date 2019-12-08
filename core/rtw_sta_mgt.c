@@ -128,6 +128,46 @@ inline bool rtw_st_ctl_chk_reg_rule(struct st_ctl_t *st_ctl, _adapter *adapter, 
 	return ret;
 }
 
+void rtw_st_ctl_rx(struct sta_info *sta, u8 *ehdr_pos)
+{
+	_adapter *adapter = sta->padapter;
+	struct ethhdr *etherhdr = (struct ethhdr *)ehdr_pos;
+
+	if (ntohs(etherhdr->h_proto) == ETH_P_IP) {
+		u8 *ip = ehdr_pos + ETH_HLEN;
+
+		if (GET_IPV4_PROTOCOL(ip) == 0x06  /* TCP */
+			&& rtw_st_ctl_chk_reg_s_proto(&sta->st_ctl, 0x06) == _TRUE
+		) {
+			u8 *tcp = ip + GET_IPV4_IHL(ip) * 4;
+
+			if (rtw_st_ctl_chk_reg_rule(&sta->st_ctl, adapter, IPV4_DST(ip), TCP_DST(tcp), IPV4_SRC(ip), TCP_SRC(tcp)) == _TRUE) {
+				if (GET_TCP_SYN(tcp) && GET_TCP_ACK(tcp)) {
+					session_tracker_add_cmd(adapter, sta
+						, IPV4_DST(ip), TCP_DST(tcp)
+						, IPV4_SRC(ip), TCP_SRC(tcp));
+					if (DBG_SESSION_TRACKER)
+						RTW_INFO(FUNC_ADPT_FMT" local:"IP_FMT":"PORT_FMT", remote:"IP_FMT":"PORT_FMT" SYN-ACK\n"
+							, FUNC_ADPT_ARG(adapter)
+							, IP_ARG(IPV4_DST(ip)), PORT_ARG(TCP_DST(tcp))
+							, IP_ARG(IPV4_SRC(ip)), PORT_ARG(TCP_SRC(tcp)));
+				}
+				if (GET_TCP_FIN(tcp)) {
+					session_tracker_del_cmd(adapter, sta
+						, IPV4_DST(ip), TCP_DST(tcp)
+						, IPV4_SRC(ip), TCP_SRC(tcp));
+					if (DBG_SESSION_TRACKER)
+						RTW_INFO(FUNC_ADPT_FMT" local:"IP_FMT":"PORT_FMT", remote:"IP_FMT":"PORT_FMT" FIN\n"
+							, FUNC_ADPT_ARG(adapter)
+							, IP_ARG(IPV4_DST(ip)), PORT_ARG(TCP_DST(tcp))
+							, IP_ARG(IPV4_SRC(ip)), PORT_ARG(TCP_SRC(tcp)));
+				}
+			}
+
+		}
+	}
+}
+
 #define SESSION_TRACKER_FMT IP_FMT":"PORT_FMT" "IP_FMT":"PORT_FMT" %u %d"
 #define SESSION_TRACKER_ARG(st) IP_ARG(&(st)->local_naddr), PORT_ARG(&(st)->local_port), IP_ARG(&(st)->remote_naddr), PORT_ARG(&(st)->remote_port), (st)->status, rtw_get_passing_time_ms((st)->set_time)
 
@@ -189,14 +229,17 @@ void _rtw_init_stainfo(struct sta_info *psta)
 
 u32	_rtw_init_sta_priv(struct	sta_priv *pstapriv)
 {
+	_adapter *adapter = container_of(pstapriv, _adapter, stapriv);
+	struct macid_ctl_t *macid_ctl = adapter_to_macidctl(adapter);
 	struct sta_info *psta;
 	s32 i;
+	u32 ret = _FAIL;
 
+	pstapriv->padapter = adapter;
 
 	pstapriv->pallocated_stainfo_buf = rtw_zvmalloc(sizeof(struct sta_info) * NUM_STA + 4);
-
 	if (!pstapriv->pallocated_stainfo_buf)
-		return _FAIL;
+		goto exit;
 
 	pstapriv->pstainfo_buf = pstapriv->pallocated_stainfo_buf + 4 -
 			 ((SIZE_PTR)(pstapriv->pallocated_stainfo_buf) & 3);
@@ -226,9 +269,19 @@ u32	_rtw_init_sta_priv(struct	sta_priv *pstapriv)
 	pstapriv->adhoc_expire_to = 4; /* 4 * 2 = 8 sec */
 
 #ifdef CONFIG_AP_MODE
-
-	pstapriv->sta_dz_bitmap = 0;
-	pstapriv->tim_bitmap = 0;
+	pstapriv->max_aid = macid_ctl->num;
+	pstapriv->rr_aid = 0;
+	pstapriv->started_aid = 1;
+	pstapriv->sta_aid = rtw_zmalloc(pstapriv->max_aid * sizeof(struct sta_info *));
+	if (!pstapriv->sta_aid)
+		goto exit;
+	pstapriv->aid_bmp_len = AID_BMP_LEN(pstapriv->max_aid);
+	pstapriv->sta_dz_bitmap = rtw_zmalloc(pstapriv->aid_bmp_len);
+	if (!pstapriv->sta_dz_bitmap)
+		goto exit;
+	pstapriv->tim_bitmap = rtw_zmalloc(pstapriv->aid_bmp_len);
+	if (!pstapriv->tim_bitmap)
+		goto exit;
 
 	_rtw_init_listhead(&pstapriv->asoc_list);
 	_rtw_init_listhead(&pstapriv->auth_list);
@@ -254,15 +307,29 @@ u32	_rtw_init_sta_priv(struct	sta_priv *pstapriv)
 #endif
 
 #if CONFIG_RTW_MACADDR_ACL
-	_rtw_init_queue(&(pstapriv->acl_list.acl_node_q));
+	for (i = 0; i < RTW_ACL_PERIOD_NUM; i++)
+		rtw_macaddr_acl_init(adapter, i);
 #endif
 
 #if CONFIG_RTW_PRE_LINK_STA
 	rtw_pre_link_sta_ctl_init(pstapriv);
 #endif
 
-	return _SUCCESS;
+	ret = _SUCCESS;
 
+exit:
+	if (ret != _SUCCESS) {
+		if (pstapriv->pallocated_stainfo_buf)
+			rtw_vmfree(pstapriv->pallocated_stainfo_buf, sizeof(struct sta_info) * NUM_STA + 4);
+		#ifdef CONFIG_AP_MODE
+		if (pstapriv->sta_aid)
+			rtw_mfree(pstapriv->sta_aid, pstapriv->max_aid * sizeof(struct sta_info *));
+		if (pstapriv->sta_dz_bitmap)
+			rtw_mfree(pstapriv->sta_dz_bitmap, pstapriv->aid_bmp_len);
+		#endif
+	}
+
+	return ret;
 }
 
 inline int rtw_stainfo_offset(struct sta_priv *stapriv, struct sta_info *sta)
@@ -395,7 +462,8 @@ u32	_rtw_free_sta_priv(struct	sta_priv *pstapriv)
 		rtw_mfree_sta_priv_lock(pstapriv);
 
 #if CONFIG_RTW_MACADDR_ACL
-		_rtw_deinit_queue(&(pstapriv->acl_list.acl_node_q));
+		for (index = 0; index < RTW_ACL_PERIOD_NUM; index++)
+			rtw_macaddr_acl_deinit(pstapriv->padapter, index);
 #endif
 
 #if CONFIG_RTW_PRE_LINK_STA
@@ -404,6 +472,14 @@ u32	_rtw_free_sta_priv(struct	sta_priv *pstapriv)
 
 		if (pstapriv->pallocated_stainfo_buf)
 			rtw_vmfree(pstapriv->pallocated_stainfo_buf, sizeof(struct sta_info) * NUM_STA + 4);
+		#ifdef CONFIG_AP_MODE
+		if (pstapriv->sta_aid)
+			rtw_mfree(pstapriv->sta_aid, pstapriv->max_aid * sizeof(struct sta_info *));
+		if (pstapriv->sta_dz_bitmap)
+			rtw_mfree(pstapriv->sta_dz_bitmap, pstapriv->aid_bmp_len);
+		if (pstapriv->tim_bitmap)
+			rtw_mfree(pstapriv->tim_bitmap, pstapriv->aid_bmp_len);
+		#endif
 	}
 
 	return _SUCCESS;
@@ -414,14 +490,15 @@ static void rtw_init_recv_timer(struct recv_reorder_ctrl *preorder_ctrl)
 {
 	_adapter *padapter = preorder_ctrl->padapter;
 
+#if defined(CONFIG_80211N_HT) && defined(CONFIG_RECV_REORDERING_CTRL)
 	rtw_init_timer(&(preorder_ctrl->reordering_ctrl_timer), padapter, rtw_reordering_ctrl_timeout_handler, preorder_ctrl);
-
+#endif
 }
 
 /* struct	sta_info *rtw_alloc_stainfo(_queue *pfree_sta_queue, unsigned char *hwaddr) */
-struct	sta_info *rtw_alloc_stainfo(struct	sta_priv *pstapriv, u8 *hwaddr)
+struct	sta_info *rtw_alloc_stainfo(struct	sta_priv *pstapriv, const u8 *hwaddr)
 {
-	_irqL irqL, irqL2;
+	_irqL irqL2;
 	s32	index;
 	_list	*phash_list;
 	struct sta_info	*psta;
@@ -475,9 +552,10 @@ struct	sta_info *rtw_alloc_stainfo(struct	sta_priv *pstapriv, u8 *hwaddr)
 
 		for (i = 0; i < 16; i++) {
 			_rtw_memcpy(&psta->sta_recvpriv.rxcache.tid_rxseq[i], &wRxSeqInitialValue, 2);
+			_rtw_memcpy(&psta->sta_recvpriv.bmc_tid_rxseq[i], &wRxSeqInitialValue, 2);
 			_rtw_memset(&psta->sta_recvpriv.rxcache.iv[i], 0, sizeof(psta->sta_recvpriv.rxcache.iv[i]));
 		}
-		
+
 		rtw_init_timer(&psta->addba_retry_timer, psta->padapter, addba_timer_hdl, psta);
 #ifdef CONFIG_IEEE80211W
 		rtw_init_timer(&psta->dot11w_expire_timer, psta->padapter, sa_query_timer_hdl, psta);
@@ -489,16 +567,14 @@ struct	sta_info *rtw_alloc_stainfo(struct	sta_priv *pstapriv, u8 *hwaddr)
 		/* for A-MPDU Rx reordering buffer control */
 		for (i = 0; i < 16 ; i++) {
 			preorder_ctrl = &psta->recvreorder_ctrl[i];
-
 			preorder_ctrl->padapter = pstapriv->padapter;
-
+			preorder_ctrl->tid = i;
 			preorder_ctrl->enable = _FALSE;
-
 			preorder_ctrl->indicate_seq = 0xffff;
-#ifdef DBG_RX_SEQ
-			RTW_INFO("DBG_RX_SEQ %s:%d IndicateSeq: %d\n", __FUNCTION__, __LINE__,
-				 preorder_ctrl->indicate_seq);
-#endif
+			#ifdef DBG_RX_SEQ
+			RTW_INFO("DBG_RX_SEQ "FUNC_ADPT_FMT" tid:%u SN_CLEAR indicate_seq:%d\n"
+				, FUNC_ADPT_ARG(pstapriv->padapter), i, preorder_ctrl->indicate_seq);
+			#endif
 			preorder_ctrl->wend_b = 0xffff;
 			/* preorder_ctrl->wsize_b = (NR_RECVBUFF-2); */
 			preorder_ctrl->wsize_b = 64;/* 64; */
@@ -519,6 +595,7 @@ struct	sta_info *rtw_alloc_stainfo(struct	sta_priv *pstapriv, u8 *hwaddr)
 #endif
 		/* init for the sequence number of received management frame */
 		psta->RxMgmtFrameSeqNum = 0xffff;
+		_rtw_memset(&psta->sta_stats, 0, sizeof(struct stainfo_stats));
 
 		rtw_alloc_macid(pstapriv->padapter, psta);
 
@@ -555,6 +632,10 @@ u32	rtw_free_stainfo(_adapter *padapter , struct sta_info *psta)
 
 	if (psta == NULL)
 		goto exit;
+
+#ifdef CONFIG_RTW_80211K
+	rm_post_event(padapter, RM_ID_FOR_ALL(psta->cmn.aid), RM_EV_cancel);
+#endif
 
 	is_pre_link_sta = rtw_is_pre_link_sta(pstapriv, psta->cmn.mac_addr);
 
@@ -643,7 +724,6 @@ u32	rtw_free_stainfo(_adapter *padapter , struct sta_info *psta)
 
 #ifdef CONFIG_TDLS
 	psta->tdls_sta_state = TDLS_STATE_NONE;
-	rtw_free_tdls_timer(psta);
 #endif /* CONFIG_TDLS */
 
 	/* for A-MPDU Rx reordering buffer control, cancel reordering_ctrl_timer */
@@ -720,8 +800,8 @@ u32	rtw_free_stainfo(_adapter *padapter , struct sta_info *psta)
 #ifdef CONFIG_NATIVEAP_MLME
 
 	if (pmlmeinfo->state == _HW_STATE_AP_) {
-		pstapriv->sta_dz_bitmap &= ~BIT(psta->cmn.aid);
-		pstapriv->tim_bitmap &= ~BIT(psta->cmn.aid);
+		rtw_tim_map_clear(padapter, pstapriv->sta_dz_bitmap, psta->cmn.aid);
+		rtw_tim_map_clear(padapter, pstapriv->tim_bitmap, psta->cmn.aid);
 
 		/* rtw_indicate_sta_disassoc_event(padapter, psta); */
 
@@ -808,7 +888,7 @@ exit:
 }
 
 /* any station allocated can be searched by hash list */
-struct sta_info *rtw_get_stainfo(struct sta_priv *pstapriv, u8 *hwaddr)
+struct sta_info *rtw_get_stainfo(struct sta_priv *pstapriv, const u8 *hwaddr)
 {
 
 	_irqL	 irqL;
@@ -819,7 +899,7 @@ struct sta_info *rtw_get_stainfo(struct sta_priv *pstapriv, u8 *hwaddr)
 
 	u32	index;
 
-	u8 *addr;
+	const u8 *addr;
 
 	u8 bc_addr[ETH_ALEN] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 
@@ -907,14 +987,75 @@ struct sta_info *rtw_get_bcmc_stainfo(_adapter *padapter)
 
 }
 
+#ifdef CONFIG_AP_MODE
+u16 rtw_aid_alloc(_adapter *adapter, struct sta_info *sta)
+{
+	struct sta_priv *stapriv = &adapter->stapriv;
+	u16 aid, i, used_cnt = 0;
+
+	for (i = 0; i < stapriv->max_aid; i++) {
+		aid = ((i + stapriv->started_aid - 1) % stapriv->max_aid) + 1;
+		if (stapriv->sta_aid[aid - 1] == NULL)
+			break;
+		if (++used_cnt >= stapriv->max_num_sta)
+			break;
+	}
+
+	/* check for aid limit and assoc limit  */
+	if (i >= stapriv->max_aid || used_cnt >= stapriv->max_num_sta)
+		aid = 0;
+
+	sta->cmn.aid = aid;
+	if (aid) {
+		stapriv->sta_aid[aid - 1] = sta;
+		if (stapriv->rr_aid)
+			stapriv->started_aid = (aid % stapriv->max_aid) + 1;
+	}
+
+	return aid;
+}
+
+void dump_aid_status(void *sel, _adapter *adapter)
+{
+	struct sta_priv *stapriv = &adapter->stapriv;
+	u8 *aid_bmp;
+	u16 i, used_cnt = 0;
+
+	aid_bmp = rtw_zmalloc(stapriv->aid_bmp_len);
+	if (!aid_bmp)
+		return;
+
+	for (i = 1; i <= stapriv->max_aid; i++) {
+		if (stapriv->sta_aid[i - 1]) {
+			aid_bmp[i / 8] |= BIT(i % 8);
+			++used_cnt;
+		}
+	}
+
+	RTW_PRINT_SEL(sel, "used_cnt:%u/%u\n", used_cnt, stapriv->max_aid);
+	RTW_MAP_DUMP_SEL(sel, "aid_map:", aid_bmp, stapriv->aid_bmp_len);
+	RTW_PRINT_SEL(sel, "\n");
+
+	RTW_PRINT_SEL(sel, "%-2s %-11s\n", "rr", "started_aid");
+	RTW_PRINT_SEL(sel, "%2d %11d\n", stapriv->rr_aid, stapriv->started_aid);
+
+	rtw_mfree(aid_bmp, stapriv->aid_bmp_len);
+}
+#endif /* CONFIG_AP_MODE */
+
 #if CONFIG_RTW_MACADDR_ACL
-const char *const _acl_mode_str[] = {
+const char *const _acl_period_str[RTW_ACL_PERIOD_NUM] = {
+	"DEV",
+	"BSS",
+};
+
+const char *const _acl_mode_str[RTW_ACL_MODE_MAX] = {
 	"DISABLED",
 	"ACCEPT_UNLESS_LISTED",
 	"DENY_UNLESS_LISTED",
 };
 
-u8 rtw_access_ctrl(_adapter *adapter, u8 *mac_addr)
+u8 _rtw_access_ctrl(_adapter *adapter, u8 period, const u8 *mac_addr)
 {
 	u8 res = _TRUE;
 	_irqL irqL;
@@ -922,8 +1063,20 @@ u8 rtw_access_ctrl(_adapter *adapter, u8 *mac_addr)
 	struct rtw_wlan_acl_node *acl_node;
 	u8 match = _FALSE;
 	struct sta_priv *stapriv = &adapter->stapriv;
-	struct wlan_acl_pool *acl = &stapriv->acl_list;
-	_queue	*acl_node_q = &acl->acl_node_q;
+	struct wlan_acl_pool *acl;
+	_queue	*acl_node_q;
+
+	if (period >= RTW_ACL_PERIOD_NUM) {
+		rtw_warn_on(1);
+		goto exit;
+	}
+
+	acl = &stapriv->acl_list[period];
+	acl_node_q = &acl->acl_node_q;
+
+	if (acl->mode != RTW_ACL_MODE_ACCEPT_UNLESS_LISTED
+		&& acl->mode != RTW_ACL_MODE_DENY_UNLESS_LISTED)
+		goto exit;
 
 	_enter_critical_bh(&(acl_node_q->lock), &irqL);
 	head = get_list_head(acl_node_q);
@@ -943,26 +1096,42 @@ u8 rtw_access_ctrl(_adapter *adapter, u8 *mac_addr)
 
 	if (acl->mode == RTW_ACL_MODE_ACCEPT_UNLESS_LISTED)
 		res = (match == _TRUE) ?  _FALSE : _TRUE;
-	else if (acl->mode == RTW_ACL_MODE_DENY_UNLESS_LISTED)
+	else /* RTW_ACL_MODE_DENY_UNLESS_LISTED */
 		res = (match == _TRUE) ?  _TRUE : _FALSE;
-	else
-		res = _TRUE;
 
+exit:
 	return res;
+}
+
+u8 rtw_access_ctrl(_adapter *adapter, const u8 *mac_addr)
+{
+	int i;
+
+	for (i = 0; i < RTW_ACL_PERIOD_NUM; i++)
+		if (_rtw_access_ctrl(adapter, i, mac_addr) == _FALSE)
+			return _FALSE;
+
+	return _TRUE;
 }
 
 void dump_macaddr_acl(void *sel, _adapter *adapter)
 {
 	struct sta_priv *stapriv = &adapter->stapriv;
-	struct wlan_acl_pool *acl = &stapriv->acl_list;
-	int i;
+	struct wlan_acl_pool *acl;
+	int i, j;
 
-	RTW_PRINT_SEL(sel, "mode:%s(%d)\n", acl_mode_str(acl->mode), acl->mode);
-	RTW_PRINT_SEL(sel, "num:%d/%d\n", acl->num, NUM_ACL);
-	for (i = 0; i < NUM_ACL; i++) {
-		if (acl->aclnode[i].valid == _FALSE)
-			continue;
-		RTW_PRINT_SEL(sel, MAC_FMT"\n", MAC_ARG(acl->aclnode[i].addr));
+	for (j = 0; j < RTW_ACL_PERIOD_NUM; j++) {
+		RTW_PRINT_SEL(sel, "period:%s(%d)\n", acl_period_str(j), j);
+
+		acl = &stapriv->acl_list[j];
+		RTW_PRINT_SEL(sel, "mode:%s(%d)\n", acl_mode_str(acl->mode), acl->mode);
+		RTW_PRINT_SEL(sel, "num:%d/%d\n", acl->num, NUM_ACL);
+		for (i = 0; i < NUM_ACL; i++) {
+			if (acl->aclnode[i].valid == _FALSE)
+				continue;
+			RTW_PRINT_SEL(sel, MAC_FMT"\n", MAC_ARG(acl->aclnode[i].addr));
+		}
+		RTW_PRINT_SEL(sel, "\n");
 	}
 }
 #endif /* CONFIG_RTW_MACADDR_ACL */

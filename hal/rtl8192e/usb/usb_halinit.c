@@ -351,7 +351,7 @@ _InitHardwareDropIncorrectBulkOut_8192E(
 #ifdef CONFIG_RTW_LED
 static void _InitHWLed(PADAPTER Adapter)
 {
-	struct led_priv *pledpriv = &(Adapter->ledpriv);
+	struct led_priv *pledpriv = adapter_to_led(Adapter);
 
 	if (pledpriv->LedStrategy != HW_LED)
 		return;
@@ -1135,16 +1135,8 @@ u32 rtl8192eu_hal_init(PADAPTER Adapter)
 
 		HAL_INIT_PROFILE_TAG(HAL_INIT_STAGES_IQK);
 		if (pwrctrlpriv->rf_pwrstate == rf_on) {
-			pHalData->bNeedIQK = _TRUE;
-			if (pHalData->bIQKInitialized)
-				halrf_iqk_trigger(&pHalData->odmpriv, _TRUE);
-				/*phy_iq_calibrate_8192e(Adapter, _TRUE);*/
-			else {
-				halrf_iqk_trigger(&pHalData->odmpriv, _FALSE);
-				/*phy_iq_calibrate_8192e(Adapter, _FALSE);*/
-				pHalData->bIQKInitialized = _TRUE;
-			}
 
+			pHalData->neediqk_24g  = _TRUE;
 			HAL_INIT_PROFILE_TAG(HAL_INIT_STAGES_PW_TRACK);
 
 			odm_txpowertracking_check(&pHalData->odmpriv);
@@ -1453,7 +1445,7 @@ hal_CustomizedBehavior_8192EU(
 #ifdef CONFIG_RTW_SW_LED
 
 	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(Adapter);
-	struct led_priv	*pledpriv = &(Adapter->ledpriv);
+	struct led_priv	*pledpriv = adapter_to_led(Adapter);
 
 
 	/* Led mode */
@@ -1564,7 +1556,7 @@ ReadLEDSetting_8192EU(
 )
 {
 #ifdef CONFIG_RTW_LED
-	struct led_priv *pledpriv = &(Adapter->ledpriv);
+	struct led_priv *pledpriv = adapter_to_led(Adapter);
 	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(Adapter);
 
 #ifdef CONFIG_RTW_SW_LED
@@ -1617,6 +1609,9 @@ InitAdapterVariablesByPROM_8192EU(
 	ReadLEDSetting_8192EU(Adapter, pHalData->efuse_eeprom_data, pHalData->bautoload_fail_flag);
 
 	Hal_EfuseParseKFreeData_8192E(Adapter, pHalData->efuse_eeprom_data, pHalData->bautoload_fail_flag);
+
+	/* set coex. ant info once efuse parsing is done */
+	rtw_btcoex_set_ant_info(Adapter);
 }
 
 static void Hal_ReadPROMContent_8192EU(
@@ -1726,6 +1721,8 @@ u8 SetHwReg8192EU(PADAPTER Adapter, u8 variable, u8 *val)
 					if ((Adapter->registrypriv.wifi_spec == 1) && (_FALSE == phtpriv->ht_option))
 #endif
 						rtw_write8(Adapter, REG_RXDMA_AGG_PG_TH + 1, 0);
+					else
+						rtw_write8(Adapter, REG_RXDMA_AGG_PG_TH + 1, pHalData->rxagg_usb_timeout);
 				}
 			}
 #endif/* #ifdef CONFIG_80211N_HT */
@@ -1776,11 +1773,6 @@ void GetHwReg8192EU(PADAPTER Adapter, u8 variable, u8 *val)
 	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(Adapter);
 
 	switch (variable) {
-	case HW_VAR_CPWM:
-#ifdef CONFIG_LPS_LCLK
-		*val = rtw_read8(Adapter, REG_USB_HCPWM);
-#endif /* CONFIG_LPS_LCLK */
-		break;
 	default:
 		GetHwReg8192E(Adapter, variable, val);
 		break;

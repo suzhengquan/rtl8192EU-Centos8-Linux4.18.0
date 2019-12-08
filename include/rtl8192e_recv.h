@@ -160,6 +160,7 @@
 #ifdef CONFIG_SDIO_HCI
 	s32 rtl8192es_init_recv_priv(PADAPTER padapter);
 	void rtl8192es_free_recv_priv(PADAPTER padapter);
+	s32 rtl8192es_recv_hdl(_adapter *padapter);
 #endif
 
 #ifdef CONFIG_USB_HCI

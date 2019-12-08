@@ -29,19 +29,23 @@
 ## modinfo 8192eu
 ```
 filename:       /lib/modules/4.18.0-80.11.2.el8_0.x86_64/kernel/drivers/net/wireless/8192eu.ko
-version:        v5.2.19.2_COEX20190601-0001
+version:        v5.6.4_35685.20191108_COEX20171113-0047
 author:         Realtek Semiconductor Corp.
 description:    Realtek Wireless Lan Driver
 license:        GPL
 rhelversion:    8.0
-srcversion:     109283A1C8A2E34FC463E68
+srcversion:     4FE8DF2867DB4639070C444
+alias:          usb:v2C4Ep0104d*dc*dsc*dp*ic*isc*ip*in*
+alias:          usb:v2C4Ep0100d*dc*dsc*dp*ic*isc*ip*in*
+alias:          usb:v2001p3319d*dc*dsc*dp*ic*isc*ip*in*
+alias:          usb:v2019pAB33d*dc*dsc*dp*ic*isc*ip*in*
 alias:          usb:v2357p0126d*dc*dsc*dp*ic*isc*ip*in*
 alias:          usb:v2357p0109d*dc*dsc*dp*ic*isc*ip*in*
-alias:          usb:v2357p0107d*dc*dsc*dp*ic*isc*ip*in*
 alias:          usb:v2357p0108d*dc*dsc*dp*ic*isc*ip*in*
+alias:          usb:v2357p0107d*dc*dsc*dp*ic*isc*ip*in*
 alias:          usb:v0BDAp818Cd*dc*dsc*dp*icFFiscFFipFFin*
 alias:          usb:v0BDAp818Bd*dc*dsc*dp*icFFiscFFipFFin*
 depends:        cfg80211
 name:           8192eu
-vermagic:       4.18.0-80.11.2.el8_0.x86_64 SMP mod_unload modversions
+vermagic:       4.18.0-80.11.2.el8_0.x86_64 SMP mod_unload modversions 
 ```

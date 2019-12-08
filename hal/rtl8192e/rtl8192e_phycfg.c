@@ -679,45 +679,6 @@ PHY_SetTxPowerIndex_8192E(
 		RTW_INFO("Invalid RFPath!!\n");
 }
 
-u8
-phy_GetCurrentTxNum_8192E(
-	IN	PADAPTER		pAdapter,
-	IN	u8				Rate
-)
-{
-	u8	tmpByte = 0;
-	u32	tmpDWord = 0;
-	u8	TxNum = RF_TX_NUM_NONIMPLEMENT;
-
-	if ((Rate >= MGN_MCS8 && Rate <= MGN_MCS15))
-		TxNum = RF_2TX;
-	else
-		TxNum = RF_1TX;
-
-#if 0
-	if (RateSection == CCK) {
-		tmpByte = PlatformIORead1Byte(pAdapter , 0xA07);
-		if ((tmpByte >> 4) == 0x8 || (tmpByte >> 4) == 0x4)
-			TxNum = RF_1TX;
-		else if ((tmpByte >> 4) == 0xC)
-			TxNum = RF_2TX;
-	} else if (RateSection == OFDM) {
-		tmpDWord = PlatformIORead4Byte(pAdapter , 0x90C);
-		if (((tmpByte & 0x00F0) >> 4) & == 0x1 || ((tmpByte & 0x00F0) >> 4) & == 0x2)
-			TxNum = RF_1TX;
-		else if (((tmpByte & 0x00F0) >> 4) & == 0x3)
-			TxNum = RF_2TX;
-	} else if (RateSection == HT_MCS0_MCS7) {
-		tmpDWord = PlatformIORead4Byte(pAdapter , 0x90C);
-		if (((tmpByte & 0x0FF00000) >> 4) & == 0x11 || ((tmpByte & 0x0FF00000) >> 4) & == 0x22)
-			TxNum = RF_1TX;
-		else if (((tmpByte & 0x0FF00000) >> 4) & == 0x33)
-			TxNum = RF_2TX;
-	} else
-		RT_DISP(FPHY, PHY_TXPWR("Invalide RateSection %d in phy_GetCurrentTxNum_8192E()\n", RateSection));
-#endif
-	return TxNum;
-}
 
 u8
 PHY_GetTxPowerIndex_8192E(
@@ -730,9 +691,11 @@ PHY_GetTxPowerIndex_8192E(
 )
 {
 	PHAL_DATA_TYPE pHalData = GET_HAL_DATA(pAdapter);
-	u8 base_idx = 0, power_idx = 0;
+	struct hal_spec_t *hal_spec = GET_HAL_SPEC(pAdapter);
+	s16 power_idx;
+	u8 base_idx = 0;
 	s8 by_rate_diff = 0, limit = 0, tpt_offset = 0, extra_bias = 0;
-	u8 ntx_idx = phy_GetCurrentTxNum_8192E(pAdapter, Rate);
+	u8 ntx_idx = phy_get_current_tx_num(pAdapter, Rate);
 	BOOLEAN bIn24G = _FALSE;
 
 	base_idx = PHY_GetTxPowerIndexBase(pAdapter, RFPath, Rate, ntx_idx, BandWidth, Channel, &bIn24G);
@@ -754,8 +717,10 @@ PHY_GetTxPowerIndex_8192E(
 	by_rate_diff = by_rate_diff > limit ? limit : by_rate_diff;
 	power_idx = base_idx + by_rate_diff + tpt_offset + extra_bias;
 
-	if (power_idx > MAX_POWER_INDEX)
-		power_idx = MAX_POWER_INDEX;
+	if (power_idx < 0)
+		power_idx = 0;
+	else if (power_idx > hal_spec->txgi_max)
+		power_idx = hal_spec->txgi_max;
 
 	return power_idx;
 }
@@ -1112,6 +1077,15 @@ phy_SwChnlAndSetBwMode8192E(
 		pHalData->bSetChnlBW = _FALSE;
 	}
 
+	if (pHalData->bNeedIQK == _TRUE) {
+		if (pHalData->neediqk_24g == _TRUE) {
+
+			halrf_iqk_trigger(&pHalData->odmpriv, _FALSE);
+			pHalData->bIQKInitialized = _TRUE;
+			pHalData->neediqk_24g = _FALSE;
+		}
+		pHalData->bNeedIQK = _FALSE;
+	}
 #ifdef CONFIG_SPUR_CAL_NBI
 	phy_SpurCalibration_8192E_NBI(Adapter);
 #endif
