@@ -23,7 +23,7 @@ s32	rtl8192e_init_xmit_priv(_adapter *padapter)
 	struct xmit_priv	*pxmitpriv = &padapter->xmitpriv;
 
 #ifdef CONFIG_TX_EARLY_MODE
-	pHalData->bEarlyModeEnable = padapter->registrypriv.early_mode;
+	//pHalData->bEarlyModeEnable = padapter->registrypriv.early_mode;
 #endif
 	pxmitpriv->hw_ssn_seq_no = rtw_get_hwseq_no(padapter);
 

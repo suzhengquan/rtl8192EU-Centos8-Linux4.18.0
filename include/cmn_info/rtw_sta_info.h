@@ -85,7 +85,7 @@ enum rf_type {
 	RF_3T3R			= 5,
 	RF_3T4R			= 6,
 	RF_4T4R			= 7,
-	RF_TYPE_MAX,
+	RF_TYPE_MAX     = 8,
 };
 
 enum bb_path {

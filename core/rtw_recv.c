@@ -1169,7 +1169,7 @@ void count_rx_stats(_adapter *padapter, union recv_frame *prframe, struct sta_in
 #ifdef CONFIG_LPS_CHK_BY_TP
 	if (!adapter_to_pwrctl(padapter)->lps_chk_by_tp)
 #endif
-		traffic_check_for_leave_lps(padapter, _FALSE, 0);
+		traffic_check_for_leave_lps(padapter, _FALSE, 1);
 #endif /* CONFIG_CHECK_LEAVE_LPS */
 
 }

@@ -24,7 +24,27 @@
  
   blacklist rtl8xxxu
   
-## Reboot
+## Add wifi reconnect script 192.168.0.1(route address)
+```
+vim /home/wificheck.sh
+
+#!/bin/bash
+
+timeout 1 ping 192.168.0.1 -c 1 2>/dev/null 1>&2
+if [ $? != 0 ]; then
+nmcli radio wifi off && sleep 1 && nmcli radio wifi on
+fi
+```
+## Crontab Task every minute
+
+```
+crontab -e (Type Enter button)
+
+* * * * * /home/wificheck.sh
+```
+## service crond reload
+
+## reboot
 
 ## modinfo 8192eu
 ```

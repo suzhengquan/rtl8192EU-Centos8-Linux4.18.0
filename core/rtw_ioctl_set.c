@@ -834,7 +834,7 @@ u16 rtw_get_cur_max_rate(_adapter *adapter)
 
 
 		while ((pcur_bss->SupportedRates[i] != 0) && (pcur_bss->SupportedRates[i] != 0xFF)) {
-			rate = pcur_bss->SupportedRates[i] & 0x7F;/*AP support rates*/
+			rate = pcur_bss->SupportedRates[i] & 0x7f;/*AP support rates*/
 			/*RTW_INFO("%s rate=%02X \n", __func__, rate);*/
 
 			/*check STA  support rate or not */

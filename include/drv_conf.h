@@ -266,8 +266,9 @@
 	#define CONFIG_RTW_CUSTOMIZE_RLSTA		0x7
 #if defined(CONFIG_RTL8192E) || defined(CONFIG_RTL8192F) || defined(CONFIG_RTL8822B)
 	#define CONFIG_RTW_TX_2PATH_EN		/*	mutually incompatible with STBC_TX & Beamformer	*/
+#endif    
 #endif
-#endif
+
 /*#define CONFIG_EXTEND_LOWRATE_TXOP			*/
 
 #ifndef CONFIG_RTW_RX_AMPDU_SZ_LIMIT_1SS
@@ -487,7 +488,7 @@ defined(CONFIG_RTL8723B) || defined(CONFIG_RTL8703B) || defined(CONFIG_RTL8723D)
 
 #ifdef DBG_CONFIG_ERROR_RESET
 #ifndef CONFIG_IPS
-#define CONFIG_IPS
+//#define CONFIG_IPS
 #endif
 #endif
 

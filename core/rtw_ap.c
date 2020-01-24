@@ -1105,8 +1105,8 @@ void update_sta_info_apmode(_adapter *padapter, struct sta_info *psta)
 		if (psta->ht_40mhz_intolerant)
 			psta->cmn.bw_mode = CHANNEL_WIDTH_20;
 
-		if (pmlmeext->cur_bwmode < psta->cmn.bw_mode)
-			psta->cmn.bw_mode = pmlmeext->cur_bwmode;
+        if (pmlmeext->cur_bwmode < psta->cmn.bw_mode)
+            psta->cmn.bw_mode = pmlmeext->cur_bwmode;
 
 		phtpriv_sta->ch_offset = pmlmeext->cur_ch_offset;
 
@@ -1415,7 +1415,7 @@ static void update_hw_ht_param(_adapter *padapter)
 	rtw_hal_set_hwreg(padapter, HW_VAR_AMPDU_MIN_SPACE, (u8 *)(&min_MPDU_spacing));
 
 	rtw_hal_set_hwreg(padapter, HW_VAR_AMPDU_FACTOR, (u8 *)(&max_AMPDU_len));
-
+#if 0
 	/*  */
 	/* Config SM Power Save setting */
 	/*  */
@@ -1434,6 +1434,7 @@ static void update_hw_ht_param(_adapter *padapter)
 	/* Config current HT Protection mode. */
 	/*  */
 	/* pmlmeinfo->HT_protection = pmlmeinfo->HT_info.infos[1] & 0x3; */
+#endif
 
 }
 #endif /* CONFIG_80211N_HT */
@@ -2298,12 +2299,20 @@ int rtw_check_beacon_data(_adapter *padapter, u8 *pbuf,  int len)
 				rtw_hal_get_hwreg(padapter, HW_VAR_RF_TYPE, (u8 *)(&rf_type));
 				rx_nss = rtw_min(rf_type_to_rf_rx_cnt(rf_type), hal_spec->rx_nss_num);
 
+				for (i = 0; i < 16; i++)
+					*(HT_CAP_ELE_RX_MCS_MAP(pht_cap) + i) = padapter->mlmeextpriv.default_supported_mcs_set[i]; ////
+                
 				/* RX MCS Bitmask */
 				switch (rx_nss) {
 				case 1:
 					set_mcs_rate_by_mask(HT_CAP_ELE_RX_MCS_MAP(pht_cap), MCS_RATE_1R);
 					break;
 				case 2:
+                    #ifdef CONFIG_DISABLE_MCS13TO15
+                    if (padapter->mlmeextpriv.cur_bwmode == CHANNEL_WIDTH_40 && pregistrypriv->wifi_spec != 1)
+                        set_mcs_rate_by_mask(HT_CAP_ELE_RX_MCS_MAP(pht_cap), MCS_RATE_2R_13TO15_OFF);
+                    else
+                    #endif
 					set_mcs_rate_by_mask(HT_CAP_ELE_RX_MCS_MAP(pht_cap), MCS_RATE_2R);
 					break;
 				case 3:
@@ -2315,8 +2324,6 @@ int rtw_check_beacon_data(_adapter *padapter, u8 *pbuf,  int len)
 				default:
 					RTW_WARN("rf_type:%d or rx_nss:%u is not expected\n", rf_type, hal_spec->rx_nss_num);
 				}
-				for (i = 0; i < 10; i++)
-					*(HT_CAP_ELE_RX_MCS_MAP(pht_cap) + i) &= padapter->mlmeextpriv.default_supported_mcs_set[i];
 			}
 
 #ifdef CONFIG_BEAMFORMING
@@ -2959,6 +2966,12 @@ u8 rtw_ap_bmc_frames_hdl(_adapter *padapter)
 static void associated_stainfo_update(_adapter *padapter, struct sta_info *psta, u32 sta_info_type)
 {
 	struct mlme_priv *pmlmepriv = &(padapter->mlmepriv);
+	struct security_priv *psecuritypriv = &padapter->securitypriv;
+	struct mlme_ext_priv	*pmlmeext = &(padapter->mlmeextpriv);
+#ifdef CONFIG_80211N_HT
+	struct ht_priv	*phtpriv_ap = &pmlmepriv->htpriv;
+	struct ht_priv	*phtpriv_sta = &psta->htpriv;
+#endif /* CONFIG_80211N_HT */
 
 	RTW_INFO("%s: "MAC_FMT", updated_type=0x%x\n", __func__, MAC_ARG(psta->cmn.mac_addr), sta_info_type);
 #ifdef CONFIG_80211N_HT
@@ -2967,9 +2980,25 @@ static void associated_stainfo_update(_adapter *padapter, struct sta_info *psta,
 		if ((psta->flags & WLAN_STA_HT) && !psta->ht_20mhz_set) {
 			if (pmlmepriv->sw_to_20mhz) {
 				psta->cmn.bw_mode = CHANNEL_WIDTH_20;
+                if ((phtpriv_sta->ht_cap.cap_info & phtpriv_ap->ht_cap.cap_info) & cpu_to_le16(IEEE80211_HT_CAP_SGI_20))
+                    phtpriv_sta->sgi_20m = _TRUE;
 				/*psta->htpriv.ch_offset = HAL_PRIME_CHNL_OFFSET_DONT_CARE;*/
-				psta->htpriv.sgi_40m = _FALSE;
-			} else {
+                psta->htpriv.sgi_40m = _FALSE;
+			} else { ////
+                if ((phtpriv_sta->ht_cap.cap_info & phtpriv_ap->ht_cap.cap_info) & cpu_to_le16(IEEE80211_HT_CAP_SUP_WIDTH))
+                    psta->cmn.bw_mode = CHANNEL_WIDTH_40;
+                else
+                    psta->cmn.bw_mode = CHANNEL_WIDTH_20;
+                
+                if ((phtpriv_sta->ht_cap.cap_info & phtpriv_ap->ht_cap.cap_info) & cpu_to_le16(IEEE80211_HT_CAP_SGI_20))
+                    phtpriv_sta->sgi_20m = _TRUE;
+                
+                if ((phtpriv_sta->ht_cap.cap_info & phtpriv_ap->ht_cap.cap_info) & cpu_to_le16(IEEE80211_HT_CAP_SGI_40)) {
+                    if (psta->cmn.bw_mode == CHANNEL_WIDTH_40) /* according to psta->bw_mode */
+                        phtpriv_sta->sgi_40m = _TRUE;
+                    else
+                        phtpriv_sta->sgi_40m = _FALSE;
+                }
 				/*TODO: Switch back to 40MHZ?80MHZ*/
 			}
 		}

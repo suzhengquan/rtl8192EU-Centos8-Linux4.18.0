@@ -520,39 +520,36 @@ static inline char *iwe_stream_rate_process(_adapter *padapter,
 	}
 #endif
 
-	/*Add basic and extended rates */
-	p = custom;
-	p += snprintf(p, MAX_CUSTOM_LEN - (p - custom), " Rates (Mb/s): ");
-	while (pnetwork->network.SupportedRates[i] != 0) {
-		rate = pnetwork->network.SupportedRates[i] & 0x7F;
-		if (rate > max_rate)
-			max_rate = rate;
-		p += snprintf(p, MAX_CUSTOM_LEN - (p - custom),
-			      "%d%s ", rate >> 1, (rate & 1) ? ".5" : "");
-		i++;
-	}
-#ifdef CONFIG_80211AC_VHT
 	if (vht_cap == _TRUE)
 		max_rate = vht_data_rate;
-	else
-#endif
-		if (ht_cap == _TRUE) {
-			if (mcs_rate & 0x8000) /* MCS15 */
-				max_rate = (bw_40MHz) ? ((short_GI) ? 300 : 270) : ((short_GI) ? 144 : 130);
-
-			else if (mcs_rate & 0x0080) /* MCS7 */
-				max_rate = (bw_40MHz) ? ((short_GI) ? 150 : 135) : ((short_GI) ? 72 : 65);
-			else { /* default MCS7 */
+	else if (ht_cap == _TRUE) {
+        if (mcs_rate & 0x8000) /* MCS15 */
+            max_rate = (bw_40MHz) ? ((short_GI) ? 300 : 270) : ((short_GI) ? 144 : 130);
+        else {  /* default MCS7 */
 				/* RTW_INFO("wx_get_scan, mcs_rate_bitmap=0x%x\n", mcs_rate); */
-				max_rate = (bw_40MHz) ? ((short_GI) ? 150 : 135) : ((short_GI) ? 72 : 65);
-			}
+                max_rate = (bw_40MHz) ? ((short_GI) ? 150 : 135) : ((short_GI) ? 72 : 65);
+            }
 
 			max_rate = max_rate * 2; /* Mbps/2;		 */
-		}
+    }
+    else
+    {
+        /*Add basic and extended rates */
+        p = custom;
+        p += snprintf(p, MAX_CUSTOM_LEN - (p - custom), " Rates (Mb/s): ");
+        while (pnetwork->network.SupportedRates[i] != 0) {
+            rate = pnetwork->network.SupportedRates[i] & 0x7F;
+            if (rate > max_rate)
+                max_rate = rate;
+            p += snprintf(p, MAX_CUSTOM_LEN - (p - custom),
+                      "%d%s ", rate >> 1, (rate & 1) ? ".5" : "");
+            i++;
+        }
+    }
 
 	iwe->cmd = SIOCGIWRATE;
 	iwe->u.bitrate.fixed = iwe->u.bitrate.disabled = 0;
-	iwe->u.bitrate.value = max_rate * 500000;
+    iwe->u.bitrate.value = max_rate * 500000;
 	start = iwe_stream_add_event(info, start, stop, iwe, IW_EV_PARAM_LEN);
 	return start ;
 }
@@ -2475,7 +2472,8 @@ exit:
 	return ret;
 
 }
-
+u8 mpdatarate[NumRates] = {11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0xff};
+    
 static int rtw_wx_set_rate(struct net_device *dev,
 			   struct iw_request_info *a,
 			   union iwreq_data *wrqu, char *extra)
@@ -2486,9 +2484,6 @@ static int rtw_wx_set_rate(struct net_device *dev,
 	u32	target_rate = wrqu->bitrate.value;
 	u32	fixed = wrqu->bitrate.fixed;
 	u32	ratevalue = 0;
-	u8 mpdatarate[NumRates] = {11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0xff};
-
-
 
 	if (target_rate == -1) {
 		ratevalue = 11;
@@ -2496,52 +2491,53 @@ static int rtw_wx_set_rate(struct net_device *dev,
 	}
 	target_rate = target_rate / 100000;
 
-	switch (target_rate) {
-	case 10:
+	//switch (target_rate) {
+	if(target_rate < 10)
 		ratevalue = 0;
-		break;
-	case 20:
+		//break;
+	else if(target_rate < 20)
 		ratevalue = 1;
-		break;
-	case 55:
+		//break;
+	else if(target_rate < 55)
 		ratevalue = 2;
-		break;
-	case 60:
+		//break;
+	else if(target_rate < 60)
 		ratevalue = 3;
-		break;
-	case 90:
+		//break;
+	else if(target_rate < 90)
 		ratevalue = 4;
-		break;
-	case 110:
+		//break;
+	else if(target_rate < 110)
 		ratevalue = 5;
-		break;
-	case 120:
+		//break;
+	else if(target_rate < 120)
 		ratevalue = 6;
-		break;
-	case 180:
+		//break;
+	else if(target_rate < 180)
 		ratevalue = 7;
-		break;
-	case 240:
+		//break;
+	else if(target_rate < 240)
 		ratevalue = 8;
-		break;
-	case 360:
+		//break;
+	else if(target_rate < 360)
 		ratevalue = 9;
-		break;
-	case 480:
+		//break;
+	else if(target_rate < 480)
 		ratevalue = 10;
-		break;
-	case 540:
+		//break;
+	else if(target_rate < 540)
 		ratevalue = 11;
-		break;
-	default:
-		ratevalue = 11;
-		break;
-	}
+		//break;
+	else 
+		ratevalue = 11; ////
+		//break;
+	//}
 
 set_rate:
 
 	for (i = 0; i < NumRates; i++) {
-		if (ratevalue == mpdatarate[i]) {
+		if (ratevalue == mpdatarate[i]) 
+        {
 			datarates[i] = mpdatarate[i];
 			if (fixed == 0)
 				break;
@@ -2570,8 +2566,7 @@ static int rtw_wx_get_rate(struct net_device *dev,
 		return -EPERM;
 
 	wrqu->bitrate.fixed = 0;	/* no auto select */
-	wrqu->bitrate.value = max_rate * 100000;
-
+    wrqu->bitrate.value = max_rate * 100000;
 	return 0;
 }
 
@@ -6468,6 +6463,7 @@ static int rtw_dbg_port(struct net_device *dev,
 				}
 #ifdef CONFIG_80211N_HT
 				else if (max_rx_rate < 0x1c) { /* mcs0~mcs15 */
+                    pregistrypriv->ht_enable = 1;
 					u32 mcs_bitmap = 0x0;
 
 					for (i = 0; i < ((max_rx_rate + 1) - 0xc); i++)
@@ -10657,6 +10653,7 @@ static int rtw_tdls_ch_switch(struct net_device *dev,
 		RTW_INFO("TDLS peer not found\n");
 
 	rtw_pm_set_lps(padapter, PS_MODE_ACTIVE);
+    //rtw_pm_set_ips(padapter, IPS_NONE);
 
 	rtw_hal_get_hwreg(padapter, HW_VAR_CH_SW_NEED_TO_TAKE_CARE_IQK_INFO, &take_care_iqk);
 	if (take_care_iqk == _TRUE) {
@@ -10672,7 +10669,7 @@ static int rtw_tdls_ch_switch(struct net_device *dev,
 	} else
 		rtw_tdls_cmd(padapter, ptdls_sta->cmn.mac_addr, TDLS_CH_SW_START);
 
-	/* issue_tdls_ch_switch_req(padapter, ptdls_sta); */
+    issue_tdls_ch_switch_req(padapter, ptdls_sta);
 	/* RTW_INFO("issue tdls ch switch req\n"); */
 
 #endif /* CONFIG_TDLS_CH_SW */

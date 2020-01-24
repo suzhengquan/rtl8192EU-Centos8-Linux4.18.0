@@ -2121,13 +2121,13 @@ if (padapter->registrypriv.ht_enable && is_supported_ht(padapter->registrypriv.w
 		/* n mode ra_bitmap */
 
 		/* Handling SMPS mode for AP MODE only*/
-		if (check_fwstate(&padapter->mlmepriv, WIFI_AP_STATE) == _TRUE) {
+		//if (check_fwstate(&padapter->mlmepriv, WIFI_AP_STATE) == _TRUE) {
 			/*0:static SMPS, 1:dynamic SMPS, 3:SMPS disabled, 2:reserved*/
-			if (psta->htpriv.smps_cap == 0 || psta->htpriv.smps_cap == 1) {
+		//	if (psta->htpriv.smps_cap == 0) { ////
 				/*operate with only one active receive chain // 11n-MCS rate <= MSC7*/
-				tx_nss = rtw_min(tx_nss, 1);
-			}
-		}
+		//		tx_nss = rtw_min(tx_nss, 1);
+		//	}
+		//}
 
 		tmp64 = rtw_ht_mcs_set_to_bitmap(psta->htpriv.ht_cap.supp_mcs_set, tx_nss);
 		tx_ra_bitmap |= (tmp64 << 12);
@@ -14599,7 +14599,7 @@ u8 phy_get_current_tx_num(
 	if (IS_1T_RATE(Rate)) {
 	#if defined(CONFIG_RTW_TX_2PATH_EN)
 		tx_num = RF_2TX;
-	else
+	#else
 		tx_num = RF_1TX;
 	#endif
 	}

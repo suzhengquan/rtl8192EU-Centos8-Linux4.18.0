@@ -528,7 +528,7 @@ extern void LPS_Leave_check(PADAPTER padapter);
 extern void LeaveAllPowerSaveMode(PADAPTER Adapter);
 extern void LeaveAllPowerSaveModeDirect(PADAPTER Adapter);
 #ifdef CONFIG_IPS
-void _ips_enter(_adapter *padapter);
+int _ips_enter(_adapter *padapter);
 void ips_enter(_adapter *padapter);
 int _ips_leave(_adapter *padapter);
 int ips_leave(_adapter *padapter);

@@ -1000,7 +1000,7 @@ void init_mlme_default_rate_set(_adapter *padapter)
 	u8	offset_datarate = 0;
 	u8	offset_basicrate = 0;
 #ifdef CONFIG_80211N_HT
-	unsigned char	supported_mcs_set[16] = {0xff, 0xff, 0xff, 0x00, 0x00, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+	unsigned char	supported_mcs_set[16] = {0xff, 0xff, 0xff, 0xff, 0x00, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
 #endif
 
 	if (IsSupportedTxCCK(padapter->registrypriv.wireless_mode)) {
@@ -1163,7 +1163,7 @@ int	init_mlme_ext_priv(_adapter *padapter)
 	pmlmeext->tsf_update_restore_factor = pregistrypriv->tsf_update_restore_factor;
 
 #ifdef CONFIG_SUPPORT_STATIC_SMPS
-	pmlmeext->ssmps_en = _FALSE;
+	pmlmeext->ssmps_en = _TRUE;
 	pmlmeext->ssmps_tx_tp_th = SSMPS_TX_TP_TH;/*Mbps*/
 	pmlmeext->ssmps_rx_tp_th = SSMPS_RX_TP_TH;/*Mbps*/
 	#ifdef DBG_STATIC_SMPS

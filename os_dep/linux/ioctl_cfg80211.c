@@ -4118,7 +4118,7 @@ static int cfg80211_rtw_disconnect(struct wiphy *wiphy, struct net_device *ndev,
 	RTW_INFO(FUNC_NDEV_FMT" return 0\n", FUNC_NDEV_ARG(ndev));
 	return 0;
 }
-
+static int gtdbm = 12;
 static int cfg80211_rtw_set_txpower(struct wiphy *wiphy,
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 8, 0))
 	struct wireless_dev *wdev,
@@ -4155,6 +4155,7 @@ static int cfg80211_rtw_set_txpower(struct wiphy *wiphy,
 		return -EOPNOTSUPP;
 	}
 #endif
+    gtdbm = MBM_TO_DBM(mbm);
 	RTW_INFO("%s\n", __func__);
 	return 0;
 }
@@ -4166,9 +4167,8 @@ static int cfg80211_rtw_get_txpower(struct wiphy *wiphy,
 	int *dbm)
 {
 	RTW_INFO("%s\n", __func__);
-
-	*dbm = (12);
-
+    *dbm = gtdbm; ////
+    //*dbm = (12);
 	return 0;
 }
 
@@ -4188,8 +4188,7 @@ static int cfg80211_rtw_set_power_mgmt(struct wiphy *wiphy,
 	RTW_INFO(FUNC_NDEV_FMT" enabled:%u, timeout:%d\n", FUNC_NDEV_ARG(ndev),
 		enabled, timeout);
 
-	rtw_wdev_priv->power_mgmt = enabled;
-
+    rtw_wdev_priv->power_mgmt = enabled;
 #ifdef CONFIG_LPS
 	if (!enabled)
 		rtw_lps_ctrl_wk_cmd(padapter, LPS_CTRL_LEAVE_CFG80211_PWRMGMT, 0);
@@ -9263,15 +9262,21 @@ static void rtw_cfg80211_init_ht_capab(_adapter *padapter
 	switch (rx_nss) {
 	case 1:
 		ht_cap->mcs.rx_mask[0] = 0xFF;
+        ht_cap->mcs.rx_mask[1] = 0;
+        ht_cap->mcs.rx_mask[2] = 0;
+        ht_cap->mcs.rx_mask[3] = 0;
 		break;
 	case 2:
 		ht_cap->mcs.rx_mask[0] = 0xFF;
 		ht_cap->mcs.rx_mask[1] = 0xFF;
+        ht_cap->mcs.rx_mask[2] = 0;
+        ht_cap->mcs.rx_mask[3] = 0;
 		break;
 	case 3:
 		ht_cap->mcs.rx_mask[0] = 0xFF;
 		ht_cap->mcs.rx_mask[1] = 0xFF;
 		ht_cap->mcs.rx_mask[2] = 0xFF;
+        ht_cap->mcs.rx_mask[3] = 0;
 		break;
 	case 4:
 		ht_cap->mcs.rx_mask[0] = 0xFF;

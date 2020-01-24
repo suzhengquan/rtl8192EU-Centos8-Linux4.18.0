@@ -2257,7 +2257,7 @@ PHY_GetTxPowerIndexBase(
 		}
 
 		/* BW40-nS */
-		if (BandWidth == CHANNEL_WIDTH_40) {
+		else if (BandWidth == CHANNEL_WIDTH_40) {
 			if ((MGN_MCS0 <= Rate && Rate <= MGN_MCS31) || (MGN_VHT1SS_MCS0 <= Rate && Rate <= MGN_VHT4SS_MCS9))
 				txPower += pHalData->BW40_24G_Diff[RFPath][RF_1TX];
 			if ((MGN_MCS8 <= Rate && Rate <= MGN_MCS31) || (MGN_VHT2SS_MCS0 <= Rate && Rate <= MGN_VHT4SS_MCS9))
@@ -2270,7 +2270,7 @@ PHY_GetTxPowerIndexBase(
 		}
 
 		/* Willis suggest adopt BW 40M power index while in BW 80 mode */
-		if (BandWidth == CHANNEL_WIDTH_80) {
+		else if (BandWidth == CHANNEL_WIDTH_80) {
 			if ((MGN_MCS0 <= Rate && Rate <= MGN_MCS31) || (MGN_VHT1SS_MCS0 <= Rate && Rate <= MGN_VHT4SS_MCS9))
 				txPower += pHalData->BW40_24G_Diff[RFPath][RF_1TX];
 			if ((MGN_MCS8 <= Rate && Rate <= MGN_MCS31) || (MGN_VHT2SS_MCS0 <= Rate && Rate <= MGN_VHT4SS_MCS9))
@@ -2317,7 +2317,7 @@ PHY_GetTxPowerIndexBase(
 		}
 
 		/* BW40-nS */
-		if (BandWidth == CHANNEL_WIDTH_40) {
+		else if (BandWidth == CHANNEL_WIDTH_40) {
 			if ((MGN_MCS0 <= Rate && Rate <= MGN_MCS31)  || (MGN_VHT1SS_MCS0 <= Rate && Rate <= MGN_VHT4SS_MCS9))
 				txPower += pHalData->BW40_5G_Diff[RFPath][RF_1TX];
 			if ((MGN_MCS8 <= Rate && Rate <= MGN_MCS31) || (MGN_VHT2SS_MCS0 <= Rate && Rate <= MGN_VHT4SS_MCS9))
@@ -2330,7 +2330,7 @@ PHY_GetTxPowerIndexBase(
 		}
 
 		/* BW80-nS */
-		if (BandWidth == CHANNEL_WIDTH_80) {
+		else if (BandWidth == CHANNEL_WIDTH_80) {
 			/* get 80MHz cch index */
 			for (i = 0; i < CENTER_CH_5G_80M_NUM; ++i) {
 				if (center_ch_5g_80m[i] == Channel) {

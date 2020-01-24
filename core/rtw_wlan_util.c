@@ -142,8 +142,8 @@ s8 rtw_get_sta_rx_nss(_adapter *adapter, struct sta_info *psta)
 
 	custom_rf_type = adapter->registrypriv.rf_config;
 	rtw_hal_get_hwreg(adapter, HW_VAR_RF_TYPE, (u8 *)(&rf_type));
-	if (RF_TYPE_VALID(custom_rf_type))
-		rf_type = custom_rf_type;
+	//if (RF_TYPE_VALID(custom_rf_type))
+	//	rf_type = custom_rf_type;
 
 	nss = rtw_min(rf_type_to_rf_rx_cnt(rf_type), hal_spec->rx_nss_num);
 
@@ -171,8 +171,8 @@ s8 rtw_get_sta_tx_nss(_adapter *adapter, struct sta_info *psta)
 
 	custom_rf_type = adapter->registrypriv.rf_config;
 	rtw_hal_get_hwreg(adapter, HW_VAR_RF_TYPE, (u8 *)(&rf_type));
-	if (RF_TYPE_VALID(custom_rf_type))
-		rf_type = custom_rf_type;
+	//if (RF_TYPE_VALID(custom_rf_type))
+	//	rf_type = custom_rf_type;
 
 	nss = rtw_min(rf_type_to_rf_tx_cnt(rf_type), hal_spec->tx_nss_num);
 
@@ -348,10 +348,10 @@ void set_mcs_rate_by_mask(u8 *mcs_set, u32 mask)
 	u8 mcs_rate_3r = (u8)((mask >> 16) & 0xff);
 	u8 mcs_rate_4r = (u8)((mask >> 24) & 0xff);
 
-	mcs_set[0] &= mcs_rate_1r;
-	mcs_set[1] &= mcs_rate_2r;
-	mcs_set[2] &= mcs_rate_3r;
-	mcs_set[3] &= mcs_rate_4r;
+    mcs_set[0] &= mcs_rate_1r;
+    mcs_set[1] &= mcs_rate_2r;
+    mcs_set[2] &= mcs_rate_3r;
+    mcs_set[3] &= mcs_rate_4r;
 }
 
 void UpdateBrateTbl(
@@ -1779,7 +1779,7 @@ static void bwmode_update_check(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pI
 			rtw_dm_ra_mask_wk_cmd(padapter, (u8 *)psta);
 		}
 
-		/* pmlmeinfo->bwmode_updated = _FALSE; */ /* bwmode_updated done, reset it! */
+		pmlmeinfo->bwmode_updated = _FALSE; /* bwmode_updated done, reset it! */
 	}
 #endif /* CONFIG_80211N_HT */
 }
@@ -1931,8 +1931,8 @@ void HT_caps_handler(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE)
 
 	/* update the MCS set */
 	for (i = 0; i < 16; i++)
-		pmlmeinfo->HT_caps.u.HT_cap_element.MCS_rate[i] &= pmlmeext->default_supported_mcs_set[i];
-
+		pmlmeinfo->HT_caps.u.HT_cap_element.MCS_rate[i] = pmlmeext->default_supported_mcs_set[i]; ////
+        
 	rtw_hal_get_hwreg(padapter, HW_VAR_RF_TYPE, (u8 *)(&rf_type));
 	tx_nss = rtw_min(rf_type_to_rf_tx_cnt(rf_type), hal_spec->tx_nss_num);
 
@@ -3074,7 +3074,7 @@ void update_tx_basic_rate(_adapter *padapter, u8 wirelessmode)
 	if (pmlmeext->cur_channel > 14)
 		wirelessmode &= ~(WIRELESS_11B);
 
-	if ((wirelessmode & WIRELESS_11B) && (wirelessmode == WIRELESS_11B))
+	if (wirelessmode == WIRELESS_11B)
 		_rtw_memcpy(supported_rates, rtw_basic_rate_cck, 4);
 	else if (wirelessmode & WIRELESS_11B)
 		_rtw_memcpy(supported_rates, rtw_basic_rate_mix, 7);

@@ -3312,6 +3312,7 @@ void rtw_iface_dynamic_check_timer_handlder(_adapter *adapter)
 	if (adapter->net_closed == _TRUE)
 		return;
 	#ifdef CONFIG_LPS_LCLK_WD_TIMER /* to avoid leaving lps 32k frequently*/
+
 	if (is_drv_in_lps(adapter)) {
 		u8 bEnterPS;
 
@@ -4946,7 +4947,7 @@ void rtw_update_ht_cap(_adapter *padapter, u8 *pie, uint ie_len, u8 channel)
 
 		/* update the MCS set */
 		for (i = 0; i < 16; i++)
-			pmlmeinfo->HT_caps.u.HT_cap_element.MCS_rate[i] &= pmlmeext->default_supported_mcs_set[i];
+			pmlmeinfo->HT_caps.u.HT_cap_element.MCS_rate[i] = pmlmeext->default_supported_mcs_set[i]; ////
 
 		/* update the MCS rates */
 		switch (tx_nss) {
@@ -4972,7 +4973,7 @@ void rtw_update_ht_cap(_adapter *padapter, u8 *pie, uint ie_len, u8 channel)
 		}
 
 		/* switch to the 40M Hz mode accoring to the AP */
-		/* pmlmeext->cur_bwmode = CHANNEL_WIDTH_40; */
+		//pmlmeext->cur_bwmode = CHANNEL_WIDTH_40;
 		switch ((pmlmeinfo->HT_info.infos[0] & 0x3)) {
 		case EXTCHNL_OFFSET_UPPER:
 			pmlmeext->cur_ch_offset = HAL_PRIME_CHNL_OFFSET_LOWER;
@@ -4987,7 +4988,7 @@ void rtw_update_ht_cap(_adapter *padapter, u8 *pie, uint ie_len, u8 channel)
 			break;
 		}
 	}
-
+#if 0
 	/*  */
 	/* Config SM Power Save setting */
 	/*  */
@@ -5006,6 +5007,7 @@ void rtw_update_ht_cap(_adapter *padapter, u8 *pie, uint ie_len, u8 channel)
 	/* Config current HT Protection mode. */
 	/*  */
 	pmlmeinfo->HT_protection = pmlmeinfo->HT_info.infos[1] & 0x3;
+#endif
 }
 #endif
 

@@ -50,11 +50,12 @@ int rtw_preamble = PREAMBLE_LONG;/* long, short, auto */
 int rtw_scan_mode = 1;/* active, passive */
 /* int smart_ps = 1; */
 #ifdef CONFIG_POWER_SAVING
-	int rtw_power_mgnt = PS_MODE_MAX;
+    int rtw_power_mgnt = PS_MODE_MAX;
 	#ifdef CONFIG_IPS_LEVEL_2
 		int rtw_ips_mode = IPS_LEVEL_2;
 	#else
-		int rtw_ips_mode = IPS_NORMAL;
+		//int rtw_ips_mode = IPS_NORMAL;
+        int rtw_ips_mode = IPS_NONE;
 	#endif /*CONFIG_IPS_LEVEL_2*/
 
 	#ifdef CONFIG_USB_HCI
@@ -1037,9 +1038,9 @@ uint loadparam(_adapter *padapter)
 
 	registry_par->switch_usb_mode = (u8)rtw_switch_usb_mode;
 
-#ifdef CONFIG_AUTOSUSPEND
+//#ifdef CONFIG_AUTOSUSPEND
 	registry_par->usbss_enable = (u8)rtw_enusbss;/* 0:disable,1:enable */
-#endif
+//#endif
 #ifdef SUPPORT_HW_RFOFF_DETECTED
 	registry_par->hwpdn_mode = (u8)rtw_hwpdn_mode;/* 0:disable,1:enable,2:by EFUSE config */
 	registry_par->hwpwrp_detect = (u8)rtw_hwpwrp_detect;/* 0:disable,1:enable */

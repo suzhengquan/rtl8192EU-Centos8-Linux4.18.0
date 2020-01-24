@@ -3218,7 +3218,7 @@ void rtw_count_tx_stats(PADAPTER padapter, struct xmit_frame *pxmitframe, int sz
 		}
 
 #ifdef CONFIG_CHECK_LEAVE_LPS
-		/* traffic_check_for_leave_lps(padapter, _TRUE); */
+        traffic_check_for_leave_lps(padapter, _TRUE, pkt_num);
 #endif /* CONFIG_CHECK_LEAVE_LPS */
 
 	}

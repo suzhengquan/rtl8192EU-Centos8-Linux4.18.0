@@ -3047,7 +3047,7 @@ static u8 _lps_chk_by_pkt_cnts(_adapter *padapter, u8 from_timer, u8 bBusyTraffi
 			LPS_Enter(padapter, "TRAFFIC_IDLE");
 		} else {
 			/* do this at caller */
-			/* rtw_lps_ctrl_wk_cmd(adapter, LPS_CTRL_ENTER, 0); */
+			//rtw_lps_ctrl_wk_cmd(padapter, LPS_CTRL_ENTER, 0);
 			/* rtw_hal_dm_watchdog_in_lps(padapter); */
 		}
 
@@ -3566,9 +3566,9 @@ void rtw_lps_change_dtim_hdl(_adapter *padapter, u8 dtim)
 		return;
 #endif
 
-#ifdef CONFIG_LPS_LCLK
+//#ifdef CONFIG_LPS_LCLK
 	_enter_pwrlock(&pwrpriv->lock);
-#endif
+//#endif
 
 	if (pwrpriv->dtim != dtim) {
 		RTW_INFO("change DTIM from %d to %d, bFwCurrentInPSMode=%d, ps_mode=%d\n", pwrpriv->dtim, dtim,
@@ -3585,9 +3585,9 @@ void rtw_lps_change_dtim_hdl(_adapter *padapter, u8 dtim)
 		rtw_hal_set_hwreg(padapter, HW_VAR_H2C_FW_PWRMODE, (u8 *)(&ps_mode));
 	}
 
-#ifdef CONFIG_LPS_LCLK
+//#ifdef CONFIG_LPS_LCLK
 	_exit_pwrlock(&pwrpriv->lock);
-#endif
+//#endif
 
 }
 

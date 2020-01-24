@@ -58,31 +58,30 @@
 
 #define CONFIG_RECV_REORDERING_CTRL
 
- /* #define CONFIG_SUPPORT_USB_INT */
- #ifdef CONFIG_SUPPORT_USB_INT
-/* #define CONFIG_USB_INTERRUPT_IN_PIPE */
+//#define CONFIG_SUPPORT_USB_INT
+#ifdef CONFIG_SUPPORT_USB_INT
+    #define CONFIG_USB_INTERRUPT_IN_PIPE
 #endif
 
-/* #define CONFIG_DISABLE_MCS13TO15	1 */	/* Disable MSC13-15 rates for more stable TX throughput with some 5G APs */
+
+//#define CONFIG_DISABLE_MCS13TO15	1 	/* Disable MSC13-15 rates for more stable TX throughput with some 5G APs */
 #define CONFIG_HIGH_CHAN_SUPER_CALIBRATION
 
 #ifdef CONFIG_POWER_SAVING
-#define CONFIG_IPS
+    //#define CONFIG_IPS
 	#ifdef CONFIG_IPS
 	/* #define CONFIG_IPS_LEVEL_2 */	 /* enable this to set default IPS mode to IPS_LEVEL_2 */
-#endif
-#define SUPPORT_HW_RFOFF_DETECTED
+    #endif
 
-#define CONFIG_LPS
+    #define CONFIG_LPS
 
-#if defined(CONFIG_LPS) && defined(CONFIG_SUPPORT_USB_INT)
-	/* #define CONFIG_LPS_LCLK */
-#endif
+    #if defined(CONFIG_LPS) && defined(CONFIG_SUPPORT_USB_INT)
+        #define CONFIG_LPS_LCLK
+    #endif
 
-
-#ifdef CONFIG_LPS_LCLK
-	/* #define CONFIG_XMIT_THREAD_MODE */
-#endif
+    #ifdef CONFIG_LPS_LCLK
+        #define CONFIG_XMIT_THREAD_MODE
+    #endif
 #endif /*CONFIG_POWER_SAVING*/
 /*#define CONFIG_ANTENNA_DIVERSITY*/
 
@@ -91,7 +90,6 @@
 #define SSMPS_TX_TP_TH	60 /*Mbps*/
 #define SSMPS_RX_TP_TH	60 /*Mbps*/
 #endif
-
 
 /* #define CONFIG_CONCURRENT_MODE */
 #ifdef CONFIG_CONCURRENT_MODE
@@ -104,13 +102,13 @@
 
 #define CONFIG_AP_MODE
 #ifdef CONFIG_AP_MODE
-	/* #define CONFIG_INTERRUPT_BASED_TXBCN */ /* Tx Beacon when driver BCN_OK ,BCN_ERR interrupt occurs */
+    ///#define CONFIG_INTERRUPT_BASED_TXBCN  /* Tx Beacon when driver BCN_OK ,BCN_ERR interrupt occurs */
 	#if defined(CONFIG_CONCURRENT_MODE) && defined(CONFIG_INTERRUPT_BASED_TXBCN)
 		#undef CONFIG_INTERRUPT_BASED_TXBCN
 	#endif
 	#ifdef CONFIG_INTERRUPT_BASED_TXBCN
 		#define CONFIG_INTERRUPT_BASED_TXBCN_EARLY_INT
-		/*#define CONFIG_INTERRUPT_BASED_TXBCN_BCN_OK_ERR*/
+        ///#define CONFIG_INTERRUPT_BASED_TXBCN_BCN_OK_ERR
 	#endif
 
 	#define CONFIG_NATIVEAP_MLME
@@ -264,7 +262,7 @@
 
 
 #ifdef CONFIG_USB_TX_AGGREGATION
-/* #define	CONFIG_TX_EARLY_MODE */
+    //#define CONFIG_TX_EARLY_MODE
 #endif
 
 #ifdef CONFIG_TX_EARLY_MODE
