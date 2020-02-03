@@ -349,9 +349,9 @@ void rtw_ps_processor(_adapter *padapter)
                     RTW_INFO("current rf_pwrstate(%s)\n", (pwrpriv->rf_pwrstate == rf_off) ? "rf_off" : "rf_on");
                 }
             }
+            pwrpriv->pwr_state_check_cnts++;
         }
 #endif /* SUPPORT_HW_RFOFF_DETECTED */
-        pwrpriv->pwr_state_check_cnts++;
         if (pwrpriv->ips_mode_req == IPS_NONE)
             goto exit;
 

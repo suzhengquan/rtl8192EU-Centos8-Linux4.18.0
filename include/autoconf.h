@@ -68,7 +68,7 @@
 #define CONFIG_HIGH_CHAN_SUPER_CALIBRATION
 
 #ifdef CONFIG_POWER_SAVING
-    //#define CONFIG_IPS
+    #define CONFIG_IPS
 	#ifdef CONFIG_IPS
 	/* #define CONFIG_IPS_LEVEL_2 */	 /* enable this to set default IPS mode to IPS_LEVEL_2 */
     #endif
