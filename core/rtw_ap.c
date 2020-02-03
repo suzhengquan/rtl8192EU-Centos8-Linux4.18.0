@@ -3126,7 +3126,7 @@ static void update_bcn_htinfo_ie(_adapter *padapter)
 
 		/* for STA Channel Width/Secondary Channel Offset*/
 		if ((pmlmepriv->sw_to_20mhz == 0) && (pmlmeext->cur_channel <= 14)) {
-			if ((pmlmepriv->num_sta_40mhz_intolerant > 0) || (pmlmepriv->ht_20mhz_width_req == _TRUE)
+			if (/*(pmlmepriv->num_sta_40mhz_intolerant > 0) ||*/ (pmlmepriv->ht_20mhz_width_req == _TRUE) ////
 			    || (pmlmepriv->ht_intolerant_ch_reported == _TRUE) || (ATOMIC_READ(&pmlmepriv->olbc) == _TRUE)) {
 				SET_HT_OP_ELE_2ND_CHL_OFFSET(pht_info, 0);
 				SET_HT_OP_ELE_STA_CHL_WIDTH(pht_info, 0);
@@ -3143,7 +3143,7 @@ static void update_bcn_htinfo_ie(_adapter *padapter)
 			}
 		} else {
 
-			if ((pmlmepriv->num_sta_40mhz_intolerant == 0) && (pmlmepriv->ht_20mhz_width_req == _FALSE)
+			if (/*(pmlmepriv->num_sta_40mhz_intolerant == 0) &&*/ (pmlmepriv->ht_20mhz_width_req == _FALSE)  ////
 			    && (pmlmepriv->ht_intolerant_ch_reported == _FALSE) && (ATOMIC_READ(&pmlmepriv->olbc) == _FALSE)) {
 
 				if (pmlmeext->cur_bwmode >= CHANNEL_WIDTH_40) {
@@ -3391,7 +3391,6 @@ void rtw_process_public_act_bsscoex(_adapter *padapter, u8 *pframe, uint frame_l
 				if (psta->ht_40mhz_intolerant == 0) {
 					psta->ht_40mhz_intolerant = 1;
 					pmlmepriv->num_sta_40mhz_intolerant++;
-					beacon_updated = _TRUE;
 				}
 			} else if (ie_data & RTW_WLAN_20_40_BSS_COEX_20MHZ_WIDTH_REQ)	{
 				if (pmlmepriv->ht_20mhz_width_req == _FALSE) {
@@ -3399,9 +3398,18 @@ void rtw_process_public_act_bsscoex(_adapter *padapter, u8 *pframe, uint frame_l
 					beacon_updated = _TRUE;
 				}
 			} else
+            {
 				beacon_updated = _FALSE;
+            }
 		}
 	}
+    else
+    {
+        if (pmlmepriv->ht_20mhz_width_req == _TRUE) {////
+            pmlmepriv->ht_20mhz_width_req = _FALSE;
+            beacon_updated = _TRUE;
+        }
+    }
 
 	if (frame_body_len > 8) {
 		/* if EID_BSSIntolerantChlReport ie exists */
@@ -3413,7 +3421,14 @@ void rtw_process_public_act_bsscoex(_adapter *padapter, u8 *pframe, uint frame_l
 			}
 		}
 	}
-
+    else
+    {
+        if (pmlmepriv->ht_intolerant_ch_reported == _TRUE) {////
+            pmlmepriv->ht_intolerant_ch_reported = _FALSE;
+            beacon_updated = _TRUE;
+        }
+    }
+    
 	if (beacon_updated) {
 
 		update_beacon(padapter, _HT_ADD_INFO_IE_, NULL, _TRUE);
@@ -3819,7 +3834,10 @@ u8 bss_cap_update_on_sta_leave(_adapter *padapter, struct sta_info *psta)
 
 	if (psta->ht_20mhz_set) {
 		psta->ht_20mhz_set = 0;
-		pmlmepriv->num_sta_ht_20mhz--;
+        if(pmlmepriv->num_sta_ht_20mhz > 0)
+            pmlmepriv->num_sta_ht_20mhz--;
+		else
+			rtw_warn_on(1);
 	}
 
 	if (psta->ht_40mhz_intolerant) {
