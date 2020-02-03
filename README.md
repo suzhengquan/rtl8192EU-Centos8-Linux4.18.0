@@ -49,7 +49,7 @@ crontab -e (Type Enter button)
 ## modinfo 8192eu
 ```
 filename:       /lib/modules/4.18.0-80.11.2.el8_0.x86_64/kernel/drivers/net/wireless/8192eu.ko
-version:        v5.6.4_35685.20191108_COEX20171113-0047
+version:        v5.6.6_35685.20191108_COEX20171113-0047
 author:         Realtek Semiconductor Corp.
 description:    Realtek Wireless Lan Driver
 license:        GPL
