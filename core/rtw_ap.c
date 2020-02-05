@@ -2977,13 +2977,13 @@ static void associated_stainfo_update(_adapter *padapter, struct sta_info *psta,
 #ifdef CONFIG_80211N_HT
 	if (sta_info_type & STA_INFO_UPDATE_BW) {
 
-		if ((psta->flags & WLAN_STA_HT) && !psta->ht_20mhz_set) {
+		if ((psta->flags & WLAN_STA_HT) /*&& !psta->ht_20mhz_set*/) {
 			if (pmlmepriv->sw_to_20mhz) {
 				psta->cmn.bw_mode = CHANNEL_WIDTH_20;
                 if ((phtpriv_sta->ht_cap.cap_info & phtpriv_ap->ht_cap.cap_info) & cpu_to_le16(IEEE80211_HT_CAP_SGI_20))
                     phtpriv_sta->sgi_20m = _TRUE;
-				/*psta->htpriv.ch_offset = HAL_PRIME_CHNL_OFFSET_DONT_CARE;*/
-                psta->htpriv.sgi_40m = _FALSE;
+				/*phtpriv_sta->ch_offset = HAL_PRIME_CHNL_OFFSET_DONT_CARE;*/
+                phtpriv_sta->sgi_40m = _FALSE;
 			} else { ////
                 if ((phtpriv_sta->ht_cap.cap_info & phtpriv_ap->ht_cap.cap_info) & cpu_to_le16(IEEE80211_HT_CAP_SUP_WIDTH))
                     psta->cmn.bw_mode = CHANNEL_WIDTH_40;
@@ -3397,9 +3397,13 @@ void rtw_process_public_act_bsscoex(_adapter *padapter, u8 *pframe, uint frame_l
 					pmlmepriv->ht_20mhz_width_req = _TRUE;
 					beacon_updated = _TRUE;
 				}
-			} else
+			} 
+            else
             {
-				beacon_updated = _FALSE;
+                if (pmlmepriv->ht_20mhz_width_req == _TRUE) {////
+                    pmlmepriv->ht_20mhz_width_req = _FALSE;
+                    beacon_updated = _TRUE;
+                }
             }
 		}
 	}
@@ -3420,6 +3424,13 @@ void rtw_process_public_act_bsscoex(_adapter *padapter, u8 *pframe, uint frame_l
 				beacon_updated = _TRUE;
 			}
 		}
+        else
+        {
+            if (pmlmepriv->ht_intolerant_ch_reported == _TRUE) {////
+                pmlmepriv->ht_intolerant_ch_reported = _FALSE;
+                beacon_updated = _TRUE;
+            }
+        }        
 	}
     else
     {
