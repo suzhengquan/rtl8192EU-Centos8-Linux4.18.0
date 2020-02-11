@@ -1730,7 +1730,7 @@ static void bwmode_update_check(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pI
 			break;
 
 		default:
-			new_bwmode = CHANNEL_WIDTH_20;
+			//new_bwmode = CHANNEL_WIDTH_20; ////
 			new_ch_offset = HAL_PRIME_CHNL_OFFSET_DONT_CARE;
 			break;
 		}

@@ -1102,11 +1102,11 @@ void update_sta_info_apmode(_adapter *padapter, struct sta_info *psta)
 			&& !GET_HT_OP_ELE_STA_CHL_WIDTH(phtpriv_sta->ht_op))
 			psta->cmn.bw_mode = CHANNEL_WIDTH_20;
 
-		if (psta->ht_40mhz_intolerant)
-			psta->cmn.bw_mode = CHANNEL_WIDTH_20;
+		//if (psta->ht_40mhz_intolerant)
+		//	psta->cmn.bw_mode = CHANNEL_WIDTH_20;
 
-        if (pmlmeext->cur_bwmode < psta->cmn.bw_mode)
-            psta->cmn.bw_mode = pmlmeext->cur_bwmode;
+        //if (pmlmeext->cur_bwmode < psta->cmn.bw_mode)
+        //    psta->cmn.bw_mode = pmlmeext->cur_bwmode;
 
 		phtpriv_sta->ch_offset = pmlmeext->cur_ch_offset;
 
@@ -3128,7 +3128,7 @@ static void update_bcn_htinfo_ie(_adapter *padapter)
 		if ((pmlmepriv->sw_to_20mhz == 0) && (pmlmeext->cur_channel <= 14)) {
 			if (/*(pmlmepriv->num_sta_40mhz_intolerant > 0) ||*/ (pmlmepriv->ht_20mhz_width_req == _TRUE) ////
 			    || (pmlmepriv->ht_intolerant_ch_reported == _TRUE) || (ATOMIC_READ(&pmlmepriv->olbc) == _TRUE)) {
-				SET_HT_OP_ELE_2ND_CHL_OFFSET(pht_info, 0);
+				SET_HT_OP_ELE_2ND_CHL_OFFSET(pht_info, SCN);///
 				SET_HT_OP_ELE_STA_CHL_WIDTH(pht_info, 0);
 
 				pmlmepriv->sw_to_20mhz = 1;
@@ -3151,8 +3151,7 @@ static void update_bcn_htinfo_ie(_adapter *padapter)
 					SET_HT_OP_ELE_STA_CHL_WIDTH(pht_info, 1);
 
 					SET_HT_OP_ELE_2ND_CHL_OFFSET(pht_info,
-						(pmlmeext->cur_ch_offset == HAL_PRIME_CHNL_OFFSET_LOWER) ?
-						HT_INFO_HT_PARAM_SECONDARY_CHNL_ABOVE : HT_INFO_HT_PARAM_SECONDARY_CHNL_BELOW);
+						(pmlmeext->cur_ch_offset == HAL_PRIME_CHNL_OFFSET_LOWER) ? SCA : SCB);
 
 					pmlmepriv->sw_to_20mhz = 0;
 					/*
