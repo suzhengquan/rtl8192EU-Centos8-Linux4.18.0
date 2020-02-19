@@ -2495,41 +2495,41 @@ static int rtw_wx_set_rate(struct net_device *dev,
 	if(target_rate < 10)
 		ratevalue = 0;
 		//break;
-	else if(target_rate < 20)
+	else if(target_rate <= 20)
 		ratevalue = 1;
 		//break;
-	else if(target_rate < 55)
+	else if(target_rate <= 55)
 		ratevalue = 2;
 		//break;
-	else if(target_rate < 60)
+	else if(target_rate <= 60)
 		ratevalue = 3;
 		//break;
-	else if(target_rate < 90)
+	else if(target_rate <= 90)
 		ratevalue = 4;
 		//break;
-	else if(target_rate < 110)
+	else if(target_rate <= 110)
 		ratevalue = 5;
 		//break;
-	else if(target_rate < 120)
+	else if(target_rate <= 120)
 		ratevalue = 6;
 		//break;
-	else if(target_rate < 180)
+	else if(target_rate <= 180)
 		ratevalue = 7;
 		//break;
-	else if(target_rate < 240)
+	else if(target_rate <= 240)
 		ratevalue = 8;
 		//break;
-	else if(target_rate < 360)
+	else if(target_rate <= 360)
 		ratevalue = 9;
 		//break;
-	else if(target_rate < 480)
+	else if(target_rate <= 480)
 		ratevalue = 10;
 		//break;
-	else if(target_rate < 540)
+	else if(target_rate <= 540)
 		ratevalue = 11;
 		//break;
 	else 
-		ratevalue = 11; ////
+		ratevalue = 11;////
 		//break;
 	//}
 

@@ -2982,7 +2982,7 @@ static void associated_stainfo_update(_adapter *padapter, struct sta_info *psta,
 				psta->cmn.bw_mode = CHANNEL_WIDTH_20;
                 if ((phtpriv_sta->ht_cap.cap_info & phtpriv_ap->ht_cap.cap_info) & cpu_to_le16(IEEE80211_HT_CAP_SGI_20))
                     phtpriv_sta->sgi_20m = _TRUE;
-				/*phtpriv_sta->ch_offset = HAL_PRIME_CHNL_OFFSET_DONT_CARE;*/
+				//phtpriv_sta->ch_offset = HAL_PRIME_CHNL_OFFSET_DONT_CARE;
                 phtpriv_sta->sgi_40m = _FALSE;
 			} else { ////
                 if ((phtpriv_sta->ht_cap.cap_info & phtpriv_ap->ht_cap.cap_info) & cpu_to_le16(IEEE80211_HT_CAP_SUP_WIDTH))
@@ -3127,8 +3127,8 @@ static void update_bcn_htinfo_ie(_adapter *padapter)
 		/* for STA Channel Width/Secondary Channel Offset*/
 		if ((pmlmepriv->sw_to_20mhz == 0) && (pmlmeext->cur_channel <= 14)) {
 			if (/*(pmlmepriv->num_sta_40mhz_intolerant > 0) ||*/ (pmlmepriv->ht_20mhz_width_req == _TRUE) ////
-			    || (pmlmepriv->ht_intolerant_ch_reported == _TRUE) || (ATOMIC_READ(&pmlmepriv->olbc) == _TRUE)) {
-				SET_HT_OP_ELE_2ND_CHL_OFFSET(pht_info, SCN);///
+			    || (pmlmepriv->ht_intolerant_ch_reported == _TRUE) /*|| (ATOMIC_READ(&pmlmepriv->olbc) == _TRUE)*/) {
+				SET_HT_OP_ELE_2ND_CHL_OFFSET(pht_info, SCN);
 				SET_HT_OP_ELE_STA_CHL_WIDTH(pht_info, 0);
 
 				pmlmepriv->sw_to_20mhz = 1;
@@ -3144,15 +3144,25 @@ static void update_bcn_htinfo_ie(_adapter *padapter)
 		} else {
 
 			if (/*(pmlmepriv->num_sta_40mhz_intolerant == 0) &&*/ (pmlmepriv->ht_20mhz_width_req == _FALSE)  ////
-			    && (pmlmepriv->ht_intolerant_ch_reported == _FALSE) && (ATOMIC_READ(&pmlmepriv->olbc) == _FALSE)) {
+			    && (pmlmepriv->ht_intolerant_ch_reported == _FALSE) /*&& (ATOMIC_READ(&pmlmepriv->olbc) == _FALSE)*/) {
 
-				if (pmlmeext->cur_bwmode >= CHANNEL_WIDTH_40) {
+				//if (pmlmeext->cur_bwmode >= CHANNEL_WIDTH_40) {
 
+					//SET_HT_OP_ELE_2ND_CHL_OFFSET(pht_info,
+					//	(pmlmeext->cur_ch_offset == HAL_PRIME_CHNL_OFFSET_LOWER) ? SCA : SCB);
+                    switch (pmlmeext->cur_ch_offset) {
+                    case HAL_PRIME_CHNL_OFFSET_LOWER:
+                        SET_HT_OP_ELE_2ND_CHL_OFFSET(pht_info, SCA);
+                        break;
+                    case HAL_PRIME_CHNL_OFFSET_UPPER:
+                        SET_HT_OP_ELE_2ND_CHL_OFFSET(pht_info, SCB);
+                        break;
+                    case HAL_PRIME_CHNL_OFFSET_DONT_CARE:
+                    default:
+                        SET_HT_OP_ELE_2ND_CHL_OFFSET(pht_info, SCN);
+                        break;
+                    }
 					SET_HT_OP_ELE_STA_CHL_WIDTH(pht_info, 1);
-
-					SET_HT_OP_ELE_2ND_CHL_OFFSET(pht_info,
-						(pmlmeext->cur_ch_offset == HAL_PRIME_CHNL_OFFSET_LOWER) ? SCA : SCB);
-
 					pmlmepriv->sw_to_20mhz = 0;
 					/*
 					sta_info_update_type |= STA_INFO_UPDATE_BW;
@@ -3160,7 +3170,7 @@ static void update_bcn_htinfo_ie(_adapter *padapter)
 					*/
 
 					RTW_INFO("%s:switching back to 40Mhz\n", __FUNCTION__);
-				}
+				//}
 			}
 		}
 
@@ -3169,7 +3179,7 @@ static void update_bcn_htinfo_ie(_adapter *padapter)
 
 	}
 
-	/*associated_clients_update(padapter, beacon_updated, sta_info_update_type);*/
+	//associated_clients_update(padapter, beacon_updated, sta_info_update_type);
 #endif /* CONFIG_80211N_HT */
 }
 

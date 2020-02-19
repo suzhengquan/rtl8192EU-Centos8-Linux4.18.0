@@ -1721,11 +1721,11 @@ static void bwmode_update_check(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pI
 		new_bwmode = CHANNEL_WIDTH_40;
 
 		switch (pHT_info->infos[0] & 0x3) {
-		case 1:
+		case EXTCHNL_OFFSET_UPPER:
 			new_ch_offset = HAL_PRIME_CHNL_OFFSET_LOWER;
 			break;
 
-		case 3:
+		case EXTCHNL_OFFSET_LOWER:
 			new_ch_offset = HAL_PRIME_CHNL_OFFSET_UPPER;
 			break;
 
